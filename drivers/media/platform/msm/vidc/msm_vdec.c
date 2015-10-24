@@ -1833,7 +1833,11 @@ static struct v4l2_ctrl **get_super_cluster(struct msm_vidc_inst *inst,
 			NUM_CTRLS, GFP_KERNEL);
 
 	if (!size || !cluster || !inst)
+	{
+		if(cluster) 
+			kfree(cluster); // PREVENT Resouce leak fix
 		return NULL;
+	}
 
 	for (c = 0; c < NUM_CTRLS; c++)
 		cluster[sz++] = inst->ctrls[c];

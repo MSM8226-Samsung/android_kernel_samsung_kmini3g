@@ -142,7 +142,7 @@ static const struct file_operations proc_iomem_operations = {
 static int __init ioresources_init(void)
 {
 	proc_create("ioports", 0, NULL, &proc_ioports_operations);
-	proc_create("iomem", S_IRUSR, NULL, &proc_iomem_operations);
+	proc_create("iomem", 0, NULL, &proc_iomem_operations);
 	return 0;
 }
 __initcall(ioresources_init);
@@ -1087,7 +1087,7 @@ int iomem_map_sanity_check(resource_size_t addr, unsigned long size)
 {
 	struct resource *p = &iomem_resource;
 	int err = 0;
-	loff_t l;
+	loff_t l = 0;
 
 	read_lock(&resource_lock);
 	for (p = p->child; p ; p = r_next(NULL, p, &l)) {
@@ -1140,7 +1140,7 @@ int iomem_is_exclusive(u64 addr)
 {
 	struct resource *p = &iomem_resource;
 	int err = 0;
-	loff_t l;
+	loff_t l = 0;
 	int size = PAGE_SIZE;
 
 	if (!strict_iomem_checks)

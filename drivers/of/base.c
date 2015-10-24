@@ -347,33 +347,6 @@ struct device_node *of_get_next_child(const struct device_node *node,
 EXPORT_SYMBOL(of_get_next_child);
 
 /**
- *	of_get_next_available_child - Find the next available child node
- *	@node:	parent node
- *	@prev:	previous child of the parent node, or NULL to get first
- *
- *      This function is like of_get_next_child(), except that it
- *      automatically skips any disabled nodes (i.e. status = "disabled").
- */
-struct device_node *of_get_next_available_child(const struct device_node *node,
-	struct device_node *prev)
-{
-	struct device_node *next;
-
-	read_lock(&devtree_lock);
-	next = prev ? prev->sibling : node->child;
-	for (; next; next = next->sibling) {
-		if (!of_device_is_available(next))
-			continue;
-		if (of_node_get(next))
-			break;
-	}
-	of_node_put(prev);
-	read_unlock(&devtree_lock);
-	return next;
-}
-EXPORT_SYMBOL(of_get_next_available_child);
-
-/**
  *	of_find_node_by_path - Find a node matching a full OF path
  *	@path:	The full path to match
  *
@@ -1270,3 +1243,43 @@ int of_alias_get_id(struct device_node *np, const char *stem)
 	return id;
 }
 EXPORT_SYMBOL_GPL(of_alias_get_id);
+
+#ifdef CONFIG_OF_SUBCMDLINE_PARSE
+int of_parse_args_on_subcmdline(const char *name, char *buf)
+{
+        struct device_node *node;
+        static const char *subcmdline;
+        char *param_start, *param_end;
+        int len = 0, name_len, cmd_len;
+
+        node = of_find_node_by_path("/chosen");
+        if (!node) {
+                pr_err("%s: get chosen node failed\n", __func__);
+                return -ENODEV;
+        }
+        subcmdline = of_get_property(node, "subcmdline", &len);
+        if (!subcmdline || len <= 0) {
+                pr_err("%s: get bootargs failed\n", __func__);
+                return -ENODEV;
+        }
+
+        name_len = strlen(name);
+        cmd_len = strlen(subcmdline);
+        param_start = strnstr(subcmdline, name, cmd_len);
+        if (!param_start) {
+                pr_err("%s: %s not found within cmdline\n", __func__, name);
+                return -1;
+        }
+        param_start += name_len;
+        param_end = strnstr(param_start, " ", 100);
+        if (!param_end) {
+                pr_err("%s: no space after %s found within cmdline\n", __func__, name);
+                return -1;
+        }
+
+        strlcpy(buf, param_start, param_end-param_start+1);
+        /* All parsed OK. */
+        return 0;
+}
+EXPORT_SYMBOL(of_parse_args_on_subcmdline);
+#endif
