@@ -474,6 +474,7 @@ resend_data:
 	sleep_timing = emission_time - 130;
 	if (sleep_timing > 0)
 		usleep(sleep_timing);
+	msleep(125);
 #endif
 
 	emission_time = \
